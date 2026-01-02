@@ -1,0 +1,6 @@
+framework:
+    serializer:
+        enabled: true
+        default_context:
+            api_platform: true
+
