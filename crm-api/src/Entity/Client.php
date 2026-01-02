@@ -14,18 +14,23 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\ClientRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_CLIENT_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: "Bu email ro'yxatdan o'tgan")]
-#[ApiResource(operations: [
-    new GetCollection(),
-    new Post(),
-    new Get(),
-    new Patch(),
-    new Delete(),
-])]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(),
+        new Get(),
+        new Patch(),
+        new Delete(),
+    ],
+    normalizationContext: ['groups' => ['client:read']],
+    denormalizationContext: ['groups' => ['client:write']]
+)]
 #[ApiFilter(SearchFilter::class, properties: [
     'fullName' => 'partial',
     'email' => 'partial',
@@ -37,6 +42,7 @@ class Client
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['client:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 120)]
@@ -47,28 +53,34 @@ class Client
         max: 120,
         maxMessage: 'Ism uzunligi {{ limit }} ta belgidan oshmasligi kerak.'
     )]
+    #[Groups(['client:read', 'client:write'])]
     private ?string $fullName = null;
 
     #[ORM\Column(length: 180, nullable: true)]
     #[Assert\Email(message: 'Email formati noto\'g\'ri.')]
     #[Assert\Length(max: 180, maxMessage: 'Email uzunligi {{ limit }} ta belgidan oshmasligi kerak.')]
+    #[Groups(['client:read', 'client:write'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['client:read', 'client:write'])]
     private ?string $workplace = null;
 
     #[ORM\Column]
     #[Assert\NotNull]
+    #[Groups(['client:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull(message: 'Kompaniya tanlash majburiy.')]
+    #[Groups(['client:read', 'client:write'])]
     private ?Company $company = null;
     
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull]
+    #[Groups(['client:read', 'client:write'])]
     private ?User $owner = null;
 
     public function __construct()

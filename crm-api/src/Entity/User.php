@@ -17,6 +17,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -29,7 +30,9 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(),
         new Patch(processor: UserPasswordHasher::class),
         new Delete(),
-    ]
+    ],
+    normalizationContext: ['groups' => ['user:read']],
+    denormalizationContext: ['groups' => ['user:write']]
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     'fullName' => 'partial',
@@ -41,6 +44,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
@@ -50,12 +54,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         max: 180,
         maxMessage: 'Email uzunligi {{ limit }} ta belgidan oshmasligi kerak.'
     )]
+    #[Groups(['user:read', 'user:write'])]
     private ?string $email = null;
 
     /**
      * @var list<string> The user roles
      */
     #[ORM\Column]
+    #[Groups(['user:read', 'user:write'])]
     private array $roles = [];
 
     /**
@@ -68,6 +74,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         max: 255,
         maxMessage: 'Parol uzunligi {{ limit }} ta belgidan oshmasligi kerak.'
     )]
+    #[Groups(['user:write'])]
     private ?string $password = null;
 
     #[ORM\Column(length: 120)]
@@ -78,13 +85,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         max: 120,
         maxMessage: 'Full name uzunligi {{ limit }} ta belgidan oshmasligi kerak.'
     )]
+    #[Groups(['user:read', 'user:write'])]
     private ?string $fullName = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: 'createdAt bo‘sh bo‘lishi mumkin emas.')]
+    #[Groups(['user:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['user:read'])]
     private ?\DateTimeImmutable $lastLoginAt = null;
 
     public function __construct()

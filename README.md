@@ -20,8 +20,8 @@ cp .env .env.local
 # .env.local faylida DATABASE_URL ni sozlash kerak
 php bin/console doctrine:database:create
 php bin/console doctrine:migrations:migrate
-php bin/console app:create-admin
 php bin/console lexik:jwt:generate-keypair
+php bin/console app:create-admin
 php -S localhost:8000 -t public
 ```
 

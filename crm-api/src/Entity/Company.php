@@ -14,18 +14,23 @@ use ApiPlatform\Metadata\Post;
 use App\Repository\CompanyRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CompanyRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_COMPANY_EMAIL', fields: ['email'])]
 #[UniqueEntity(fields: ['email'], message: "Bu email ro'yxatdan o'tgan")]
-#[ApiResource(operations: [
-    new GetCollection(),
-    new Post(),
-    new Get(),
-    new Patch(),
-    new Delete(),
-])]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Post(),
+        new Get(),
+        new Patch(),
+        new Delete(),
+    ],
+    normalizationContext: ['groups' => ['company:read']],
+    denormalizationContext: ['groups' => ['company:write']]
+)]
 #[ApiFilter(SearchFilter::class, properties: [
     'name' => 'partial',
     'email' => 'partial',
@@ -37,16 +42,19 @@ class Company
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['company:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 150)]
     #[Assert\NotBlank(message: 'Company name is required.')]
     #[Assert\Length(max: 150, maxMessage: 'Company name must be at most {{ limit }} characters.')]
+    #[Groups(['company:read', 'company:write'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 180, nullable: true)]
     #[Assert\Email(message: 'Email formati noto\'g\'ri.')]
     #[Assert\Length(max: 180, maxMessage: 'Email uzunligi {{ limit }} ta belgidan oshmasligi kerak.')]
+    #[Groups(['company:read', 'company:write'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -56,15 +64,18 @@ class Company
         max: 255,
         maxMessage: 'Parol uzunligi {{ limit }} ta belgidan oshmasligi kerak.'
     )]
+    #[Groups(['company:read', 'company:write'])]
     private ?string $password = null;
 
     #[ORM\Column]
     #[Assert\NotNull]
+    #[Groups(['company:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     #[Assert\NotNull]
+    #[Groups(['company:read', 'company:write'])]
     private ?User $owner = null;
 
     public function __construct()
