@@ -11,12 +11,16 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
-use App\State\UserPasswordHasher;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use App\Controller\UserCreateAction;
+use App\Controller\UserUpdateController;
+use App\Controller\UserCreateClientAction;
+use App\Controller\UserDeleteAction;
+use App\Entity\MediaObject;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -26,10 +30,26 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     operations: [
         new GetCollection(),
-        new Post(processor: UserPasswordHasher::class),
+        new Post(
+            name: 'user_create', 
+            controller: UserCreateAction::class,
+            processor: \ApiPlatform\State\Util\RequestProcessor::class
+        ),
         new Get(),
-        new Patch(processor: UserPasswordHasher::class),
-        new Delete(),
+        new Patch(
+            name: 'user_update',
+            controller: UserUpdateController::class,
+            processor: \ApiPlatform\State\Util\RequestProcessor::class
+        ),
+        new Delete(
+            name: 'app_user_delete', 
+            controller: UserDeleteAction::class
+        ),
+        new Post(
+            uriTemplate: '/users/{id}/clients', 
+            controller: UserCreateClientAction::class,
+            name: 'user_create_client'
+        )
     ],
     normalizationContext: ['groups' => ['user:read']],
     denormalizationContext: ['groups' => ['user:write']]
@@ -96,6 +116,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     #[Groups(['user:read'])]
     private ?\DateTimeImmutable $lastLoginAt = null;
+
+    #[ORM\ManyToOne(targetEntity: MediaObject::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
+    private ?MediaObject $image = null;
 
     public function __construct()
     {
@@ -217,6 +242,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setLastLoginAt(?\DateTimeImmutable $lastLoginAt): static
     {
         $this->lastLoginAt = $lastLoginAt;
+
+        return $this;
+    }
+
+    public function getImage(): ?MediaObject
+    {
+        return $this->image;
+    }
+
+    public function setImage(?MediaObject $image): static
+    {
+        $this->image = $image;
 
         return $this;
     }
