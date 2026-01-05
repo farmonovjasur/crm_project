@@ -21,9 +21,13 @@ class UserCreateAction extends AbstractController
     ) {
     }
 
-    public function __invoke(Request $request): User
+    public function __invoke(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
+
+        if (!$data || !isset($data['email'], $data['fullName'], $data['password'])) {
+            return $this->json(['message' => 'Missing required data'], 400);
+        }
 
         $user = $this->userFactory->create(
             $data['email'],
@@ -34,6 +38,6 @@ class UserCreateAction extends AbstractController
 
         $this->userManager->save($user);
 
-        return $user;
+        return $this->json($user, 201, [], ['groups' => ['user:read']]);
     }
 }
